@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tweet Sentiment Analysis</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            background-color: #121212;
+            color: #fff;
+        }
+
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            object-fit: cover;
+            z-index: -1;
+            filter: brightness(0.4);
+        }
+
+        .container {
+            background: rgba(20, 20, 20, 0.9);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+            border-radius: 10px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(270deg, #00f7ff, #ff00c8, #ffce00);
+            background-size: 600% 600%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientMove 6s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 16px;
+            color: #bbb;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background-color: #1f1f1f;
+            color: #fff;
+            margin-bottom: 20px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border-color: #00ffff;
+            outline: none;
+            box-shadow: 0 0 8px #00ffff;
+        }
+
+         button {
+            background: linear-gradient(90deg, #00f7ff, #ff00c8);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 30px;
+                margin: 20px;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <video autoplay muted loop id="bg-video">
+        <source src="{{ url_for('static', filename='video1.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <div class="container">
+        <h1>Twitter Sentiment Analysis</h1>
+
+        <form action="{{ url_for('authorize') }}" method="post">
+            <label for="topic">Topic</label>
+            <input type="text" id="topic" name="topic" required placeholder="Enter topic (e.g. 'AI', 'climate change')">
+
+            <label for="tweet_count">Number of Tweets</label>
+            <input type="number" id="tweet_count" name="tweet_count" required min="1" max="100" placeholder="Number of tweets (1-100)">
+
+            <button type="submit">Authorize & Analyze Tweets</button>
+        </form>
+    </div>
+</body>
+</html>

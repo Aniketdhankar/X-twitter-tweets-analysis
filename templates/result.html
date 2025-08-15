@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Tweet Sentiment Analysis - Results</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* same styling as earlier modern result.html, keep it or customize */
+    :root{--bg:#0b1020;--panel:#0f172a;--muted:#94a3b8;--text:#e2e8f0;--acc:#22d3ee}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui;}
+    .container{max-width:1200px;margin:24px auto;padding:20px}
+    h1{margin:8px 0 20px;font-size:28px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
+    .card{background:linear-gradient(180deg,#0f172a 0%, #0b1220 100%);border:1px solid #1f2937;border-radius:16px;padding:20px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+    #sentimentChart{max-width:700px;margin:0 auto;height:380px}
+    .toolbar{display:flex;gap:8px;margin:0 0 12px;align-items:center;flex-wrap:wrap}
+    select,input{background:#0b1220;border:1px solid #243244;border-radius:10px;color:var(--text);padding:10px}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th,td{text-align:left;padding:12px 14px}
+    tbody tr{background:#0b1220;border:1px solid #1f2937}
+    .pill{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    .pos{background:#073b44;color:#9ff0ff}
+    .neg{background:#3a0b10;color:#ffb4b4}
+    .neu{background:#262b39;color:#cbd5e1}
+    .tweet{white-space:pre-wrap;word-wrap:break-word}
+    .btn{background:linear-gradient(90deg,#06b6d4,#22d3ee);padding:8px 12px;border-radius:8px;color:#042028;text-decoration:none;font-weight:700;border:none;cursor:pointer}
+    footer{opacity:.75;text-align:center;margin:28px 0;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sentiment Analysis Results</h1>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <a class="btn" href="/export" target="_blank">Export CSV</a>
+      </div>
+      <div>
+        <button id="reload" class="btn">Reload</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <canvas id="sentimentChart"></canvas>
+        <p id="perc" style="text-align:center;margin-top:10px"></p>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <label>Filter:</label>
+          <select id="sentimentFilter">
+            <option value="">All</option>
+            <option value="positive">Positive</option>
+            <option value="negative">Negative</option>
+            <option value="neutral">Neutral</option>
+          </select>
+          <input id="pageSize" type="number" min="10" max="100" value="20" />
+        </div>
+        <table>
+          <thead>
+            <tr><th>Sentiment</th><th>Tweet</th><th>Time (UTC)</th></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="toolbar" style="margin-top:12px">
+          <button id="prev" class="btn">Prev</button>
+          <span id="pginfo" style="padding:0 12px"></span>
+          <button id="next" class="btn">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>© 2025 · Twitter + MongoDB + Transformers</footer>
+  </div>
+
+  <script>
+    let chart;
+    async function loadCounts(){
+      const r = await fetch('/api/sentiment_counts');
+      const counts = await r.json();
+      const total = (counts.positive||0) + (counts.negative||0) + (counts.neutral||0);
+      const ctx = document.getElementById('sentimentChart').getContext('2d');
+      if(chart) chart.destroy();
+      chart = new Chart(ctx,{
+        type:'pie',
+        data:{
+          labels:['Positive','Negative','Neutral'],
+          datasets:[{ data:[counts.positive, counts.negative, counts.neutral] }]
+        },
+        options:{responsive:true}
+      });
+      const pct = t => total ? ((t/total)*100).toFixed(1) : 0;
+      document.getElementById('perc').textContent =
+        `Positive: ${pct(counts.positive)}% · Negative: ${pct(counts.negative)}% · Neutral: ${pct(counts.neutral)}%`;
+    }
+
+    let page=1;
+    async function loadTweets(){
+      const sentiment = document.getElementById('sentimentFilter').value;
+      const pageSize = document.getElementById('pageSize').value;
+      const r = await fetch(`/api/tweets?${new URLSearchParams({page, page_size: pageSize, sentiment})}`);
+      const data = await r.json();
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      data.items.forEach(t=>{
+        const tr = document.createElement('tr');
+        const pill = t.sentiment==='positive'?'pos':(t.sentiment==='negative'?'neg':'neu');
+        tr.innerHTML = `
+          <td><span class="pill ${pill}">${t.sentiment}</span></td>
+          <td class="tweet">${t.text}</td>
+          <td>${new Date(t.timestamp).toISOString().slice(0,19).replace('T',' ')}</td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('pginfo').textContent = `Page ${data.page}`;
+    }
+
+    document.getElementById('reload').onclick = ()=>{page=1; loadTweets(); loadCounts();};
+    document.getElementById('prev').onclick = ()=>{page=Math.max(1,page-1); loadTweets();};
+    document.getElementById('next').onclick = ()=>{page=page+1; loadTweets();};
+    document.getElementById('sentimentFilter').onchange = ()=>{page=1; loadTweets();};
+
+    loadCounts();
+    loadTweets();
+  </script>
+</body>
+</html>
